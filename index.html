@@ -19,8 +19,7 @@
             --text-color: #333d47;
             --card-bg: #ffffff;
             --border-radius: 12px;
-            --box-shadow: 0 4px
- 15px rgba(0, 0, 0, 0.1);
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -71,6 +70,7 @@
 
         .quiz-body {
             padding: 2rem;
+            position: relative;
         }
 
         #progress-container {
@@ -138,6 +138,7 @@
             border-color: var(--correct-color);
             color: white;
             font-weight: bold;
+            animation: tada 0.8s ease;
         }
 
         .option.incorrect {
@@ -149,6 +150,10 @@
 
         .option[disabled] {
             cursor: not-allowed;
+        }
+        
+        .quiz-container.shake {
+            animation: shake 0.5s ease-in-out;
         }
 
         #results-container {
@@ -230,6 +235,27 @@
 
         #retry-btn:hover {
             background-color: #008a48;
+        }
+        
+        /* Definición de Animaciones */
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+
+        @keyframes tada {
+            from { transform: scale3d(1, 1, 1); }
+            10%, 20% { transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg); }
+            30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); }
+            40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); }
+            to { transform: scale3d(1, 1, 1); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         /* Responsive Design */
@@ -368,9 +394,9 @@
             },
             {
                 pregunta: "Si un cliente pide más detalles sobre la app, el vendedor debe...",
-                opciones: ["...darle un folleto.", "...invitarlo a escanear el codigo QR de su lanyard.", "...dirigirlo a la oficina."],
-                respuestaCorrecta: "...invitarlo a escanear el codigo QR de su lanyard.",
-                explicacion: "El codigo QR en el lanyard es la herramienta designada para que el cliente obtenga más información de forma autónoma y rápida."
+                opciones: ["...darle un folleto.", "...invitarlo a escanear la cartilla de su lanyard.", "...dirigirlo a la oficina."],
+                respuestaCorrecta: "...invitarlo a escanear la cartilla de su lanyard.",
+                explicacion: "La cartilla en el lanyard es la herramienta designada para que el cliente obtenga más información de forma autónoma y rápida."
             },
             {
                 pregunta: "¿Cuál es la frase de despedida estandarizada en el protocolo?",
@@ -448,7 +474,7 @@
                 pregunta: "Además de potenciar la app, ¿qué otro atributo clave de Aramco se debe reforzar?",
                 opciones: ["La rapidez del servicio", "La 'Nueva Fórmula' de sus combustibles", "Los precios competitivos"],
                 respuestaCorrecta: "La 'Nueva Fórmula' de sus combustibles",
-                explicacion: "El protocolo busca reforzar los atributos de valor de la marca, y la 'Nueva Fórmula' Pro Force es uno de los más importantes."
+                explicacion: "El protocolo busca reforzar los atributos de valor de la marca, y la 'Nueva Fórmula' es uno de los más importantes."
             },
             {
                 pregunta: "¿Qué dos programas de lealtad se mencionan como acumulables al pagar con la app?",
@@ -521,7 +547,7 @@
             
             questionEl.innerText = currentQuizData.pregunta;
             questionCounterEl.innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
-            progressBarEl.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+            progressBarEl.style.width = `${((currentQuestionIndex) / quizData.length) * 100}%`;
 
             optionsContainer.innerHTML = '';
 
@@ -532,6 +558,7 @@
                 button.addEventListener('click', () => selectAnswer(button, opcion));
                 optionsContainer.appendChild(button);
             });
+             progressBarEl.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
         }
         
         function selectAnswer(button, selectedOption) {
@@ -556,6 +583,11 @@
 
             } else {
                 button.classList.add('incorrect');
+                quizContainer.classList.add('shake');
+                quizContainer.addEventListener('animationend', () => {
+                    quizContainer.classList.remove('shake');
+                }, { once: true });
+
                 Array.from(options).forEach(opt => {
                     if (opt.innerText === correctAnswer) {
                         opt.classList.add('correct');
@@ -578,6 +610,8 @@
             document.querySelector('.quiz-body').style.display = 'none';
             document.querySelector('.quiz-header').style.display = 'none';
             resultsContainer.style.display = 'block';
+            resultsContainer.style.animation = 'fadeIn 0.5s ease-in-out';
+
 
             scoreEl.innerText = `${score} / ${quizData.length}`;
             
@@ -611,8 +645,11 @@
             
             loadQuiz();
         });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuiz();
+        });
 
-        loadQuiz();
     </script>
 </body>
 </html>
