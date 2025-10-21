@@ -322,8 +322,8 @@
             },
             {
                 pregunta: "¿Cuál es el saludo inicial que debe dar el vendedor?",
-                opciones: ["¡Hola, buenos días!", "¡Bienvenido(a) a Aramco!", "¿En qué le puedo ayudar?"],
-                respuestaCorrecta: "¡Bienvenido(a) a Aramco!",
+                opciones: ["¡Hola, buenos días!", "¡Bienvenido(a) Aramco!", "¿En qué le puedo ayudar?"],
+                respuestaCorrecta: "¡Bienvenido(a) Aramco!",
                 explicacion: "El protocolo especifica este saludo para estandarizar y fortalecer la identidad de la marca desde el primer contacto."
             },
             {
@@ -541,24 +541,50 @@
         let currentQuestionIndex = 0;
         let score = 0;
         const userAnswers = [];
+        let shuffledQuizData = [];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startQuiz() {
+            shuffledQuizData = [...quizData];
+            shuffleArray(shuffledQuizData);
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.length = 0;
+
+            resultsContainer.style.display = 'none';
+            document.querySelector('.quiz-body').style.display = 'block';
+            document.querySelector('.quiz-header').style.display = 'block';
+            
+            loadQuiz();
+        }
 
         function loadQuiz() {
-            const currentQuizData = quizData[currentQuestionIndex];
+            const currentQuizData = shuffledQuizData[currentQuestionIndex];
             
             questionEl.innerText = currentQuizData.pregunta;
-            questionCounterEl.innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
-            progressBarEl.style.width = `${((currentQuestionIndex) / quizData.length) * 100}%`;
+            questionCounterEl.innerText = `Pregunta ${currentQuestionIndex + 1} de ${shuffledQuizData.length}`;
+            progressBarEl.style.width = `${((currentQuestionIndex) / shuffledQuizData.length) * 100}%`;
 
             optionsContainer.innerHTML = '';
+            
+            const shuffledOptions = [...currentQuizData.opciones];
+            shuffleArray(shuffledOptions);
 
-            currentQuizData.opciones.forEach(opcion => {
+            shuffledOptions.forEach(opcion => {
                 const button = document.createElement('button');
                 button.innerText = opcion;
                 button.classList.add('option');
                 button.addEventListener('click', () => selectAnswer(button, opcion));
                 optionsContainer.appendChild(button);
             });
-             progressBarEl.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+             progressBarEl.style.width = `${((currentQuestionIndex + 1) / shuffledQuizData.length) * 100}%`;
         }
         
         function selectAnswer(button, selectedOption) {
@@ -571,7 +597,7 @@
                 opt.disabled = true;
             }
 
-            const currentQuizData = quizData[currentQuestionIndex];
+            const currentQuizData = shuffledQuizData[currentQuestionIndex];
             const correctAnswer = currentQuizData.respuestaCorrecta;
             
             userAnswers[currentQuestionIndex] = selectedOption;
@@ -598,7 +624,7 @@
 
             setTimeout(() => {
                 currentQuestionIndex++;
-                if (currentQuestionIndex < quizData.length) {
+                if (currentQuestionIndex < shuffledQuizData.length) {
                     loadQuiz();
                 } else {
                     showResults();
@@ -612,11 +638,10 @@
             resultsContainer.style.display = 'block';
             resultsContainer.style.animation = 'fadeIn 0.5s ease-in-out';
 
-
-            scoreEl.innerText = `${score} / ${quizData.length}`;
+            scoreEl.innerText = `${score} / ${shuffledQuizData.length}`;
             
             summaryContainer.innerHTML = '<h3>Resumen de Respuestas</h3>';
-            quizData.forEach((questionData, index) => {
+            shuffledQuizData.forEach((questionData, index) => {
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === questionData.respuestaCorrecta;
 
@@ -634,21 +659,9 @@
             });
         }
         
-        retryBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.length = 0;
-
-            resultsContainer.style.display = 'none';
-            document.querySelector('.quiz-body').style.display = 'block';
-            document.querySelector('.quiz-header').style.display = 'block';
-            
-            loadQuiz();
-        });
+        retryBtn.addEventListener('click', startQuiz);
         
-        document.addEventListener('DOMContentLoaded', () => {
-            loadQuiz();
-        });
+        document.addEventListener('DOMContentLoaded', startQuiz);
 
     </script>
 </body>
