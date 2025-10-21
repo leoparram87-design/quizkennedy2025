@@ -19,8 +19,7 @@
             --text-color: #333d47;
             --card-bg: #ffffff;
             --border-radius: 12px;
-            --box-shadow: 0 4px
- 15px rgba(0, 0, 0, 0.1);
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -71,6 +70,7 @@
 
         .quiz-body {
             padding: 2rem;
+            position: relative;
         }
 
         #progress-container {
@@ -138,6 +138,7 @@
             border-color: var(--correct-color);
             color: white;
             font-weight: bold;
+            animation: tada 0.8s ease;
         }
 
         .option.incorrect {
@@ -149,6 +150,10 @@
 
         .option[disabled] {
             cursor: not-allowed;
+        }
+        
+        .quiz-container.shake {
+            animation: shake 0.5s ease-in-out;
         }
 
         #results-container {
@@ -167,6 +172,18 @@
         #results-container h2 {
             font-size: 1.8rem;
             margin-bottom: 2rem;
+        }
+
+        #video-feedback-container {
+            margin: 1.5rem 0;
+        }
+
+        #feedback-video {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 100%;
+            height: auto;
+            max-height: 300px;
         }
 
         #summary-container {
@@ -232,6 +249,27 @@
             background-color: #008a48;
         }
         
+        /* Definición de Animaciones */
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+
+        @keyframes tada {
+            from { transform: scale3d(1, 1, 1); }
+            10%, 20% { transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg); }
+            30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); }
+            40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); }
+            to { transform: scale3d(1, 1, 1); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
         /* Responsive Design */
         @media (max-width: 640px) {
             .quiz-body, .quiz-header, #results-container {
@@ -271,6 +309,11 @@
             <h2>¡Quiz Completado!</h2>
             <p id="score-text">Tu puntaje final es:</p>
             <p id="score">0 / 30</p>
+            <div id="video-feedback-container" style="display: none;">
+                <video id="feedback-video" autoplay muted playsinline loop>
+                    Tu navegador no soporta videos.
+                </video>
+            </div>
             <button id="retry-btn">Volver a Intentar</button>
             <div id="summary-container">
                  <!-- El resumen se cargará aquí dinámicamente -->
@@ -515,23 +558,51 @@
         let currentQuestionIndex = 0;
         let score = 0;
         const userAnswers = [];
+        let shuffledQuizData = [];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startQuiz() {
+            shuffledQuizData = [...quizData];
+            shuffleArray(shuffledQuizData);
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.length = 0;
+
+            document.getElementById('video-feedback-container').style.display = 'none';
+            resultsContainer.style.display = 'none';
+            document.querySelector('.quiz-body').style.display = 'block';
+            document.querySelector('.quiz-header').style.display = 'block';
+            
+            loadQuiz();
+        }
 
         function loadQuiz() {
-            const currentQuizData = quizData[currentQuestionIndex];
+            const currentQuizData = shuffledQuizData[currentQuestionIndex];
             
             questionEl.innerText = currentQuizData.pregunta;
-            questionCounterEl.innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
-            progressBarEl.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+            questionCounterEl.innerText = `Pregunta ${currentQuestionIndex + 1} de ${shuffledQuizData.length}`;
+            progressBarEl.style.width = `${((currentQuestionIndex) / shuffledQuizData.length) * 100}%`;
 
             optionsContainer.innerHTML = '';
+            
+            const shuffledOptions = [...currentQuizData.opciones];
+            shuffleArray(shuffledOptions);
 
-            currentQuizData.opciones.forEach(opcion => {
+            shuffledOptions.forEach(opcion => {
                 const button = document.createElement('button');
                 button.innerText = opcion;
                 button.classList.add('option');
                 button.addEventListener('click', () => selectAnswer(button, opcion));
                 optionsContainer.appendChild(button);
             });
+             progressBarEl.style.width = `${((currentQuestionIndex + 1) / shuffledQuizData.length) * 100}%`;
         }
         
         function selectAnswer(button, selectedOption) {
@@ -544,7 +615,7 @@
                 opt.disabled = true;
             }
 
-            const currentQuizData = quizData[currentQuestionIndex];
+            const currentQuizData = shuffledQuizData[currentQuestionIndex];
             const correctAnswer = currentQuizData.respuestaCorrecta;
             
             userAnswers[currentQuestionIndex] = selectedOption;
@@ -556,6 +627,11 @@
 
             } else {
                 button.classList.add('incorrect');
+                quizContainer.classList.add('shake');
+                quizContainer.addEventListener('animationend', () => {
+                    quizContainer.classList.remove('shake');
+                }, { once: true });
+
                 Array.from(options).forEach(opt => {
                     if (opt.innerText === correctAnswer) {
                         opt.classList.add('correct');
@@ -566,7 +642,7 @@
 
             setTimeout(() => {
                 currentQuestionIndex++;
-                if (currentQuestionIndex < quizData.length) {
+                if (currentQuestionIndex < shuffledQuizData.length) {
                     loadQuiz();
                 } else {
                     showResults();
@@ -578,11 +654,25 @@
             document.querySelector('.quiz-body').style.display = 'none';
             document.querySelector('.quiz-header').style.display = 'none';
             resultsContainer.style.display = 'block';
+            resultsContainer.style.animation = 'fadeIn 0.5s ease-in-out';
 
-            scoreEl.innerText = `${score} / ${quizData.length}`;
+            scoreEl.innerText = `${score} / ${shuffledQuizData.length}`;
+
+            const videoContainer = document.getElementById('video-feedback-container');
+            const videoEl = document.getElementById('feedback-video');
+            
+            // **IMPORTANTE**: Asegúrate de tener los archivos 'aprobacion.mp4' y 'decepcion.mp4'
+            // en la misma carpeta que este archivo index.html.
+            if (score >= 28) {
+                videoEl.src = 'aprobacion.mp4';
+                videoContainer.style.display = 'block';
+            } else {
+                videoEl.src = 'decepcion.mp4';
+                videoContainer.style.display = 'block';
+            }
             
             summaryContainer.innerHTML = '<h3>Resumen de Respuestas</h3>';
-            quizData.forEach((questionData, index) => {
+            shuffledQuizData.forEach((questionData, index) => {
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === questionData.respuestaCorrecta;
 
@@ -600,19 +690,10 @@
             });
         }
         
-        retryBtn.addEventListener('click', () => {
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswers.length = 0;
+        retryBtn.addEventListener('click', startQuiz);
+        
+        document.addEventListener('DOMContentLoaded', startQuiz);
 
-            resultsContainer.style.display = 'none';
-            document.querySelector('.quiz-body').style.display = 'block';
-            document.querySelector('.quiz-header').style.display = 'block';
-            
-            loadQuiz();
-        });
-
-        loadQuiz();
     </script>
 </body>
 </html>
